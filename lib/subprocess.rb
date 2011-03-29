@@ -14,13 +14,14 @@ class Subprocess
   class Error < StandardError
   end
 
-  attr_reader :pid, :stdeo
+  attr_reader :pid, :stdin, :stdeo
 
   def initialize(stdin, stdeo, pid)
     @stdin = stdin
     @stdeo = stdeo
     @pid = pid
     @exit_code = nil
+    @finished = false
   end
 
   def io_nonblock=(nb)
@@ -28,19 +29,40 @@ class Subprocess
     @stdin.nonblock = nb
   end
 
+  def finished?
+    return true if @finished
+    pid = Process.waitpid(@pid, Process::WNOHANG)
+    if pid.nil?
+      false
+    else
+      proc_stat = $?
+      @exit_code = proc_stat.exitstatus if proc_stat.exited?
+      @finished = true
+    end
+  end
+
   def wait
+    return @exit_code if @finished
     Process.waitpid(@pid, 0)
+    @finished = true
     proc_stat = $?
-    @exit_code = proc_stat.exitstatus
+    @exit_code = proc_stat.exitstatus if proc_stat.exited?
+    return @exit_code
   end
 
   def exit_code
-    if @exit_code.nil?
-      raise Proc::Error, "process still running or wait not called"
+    unless finished?
+      raise Subprocess::Error, "process is still running"
     else
       return @exit_code
     end
   end
+
+  def kill(signal = "TERM")
+    Process.kill(signal, @pid)
+  end
+
+  # popen class method(s)
 
   def self.popen2(cmd, env = {})
     stdin_r, stdin_w = IO.pipe
