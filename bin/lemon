@@ -1,0 +1,92 @@
+#!/usr/bin/env ruby
+#-*- encoding: utf-8 -*-
+#
+# This file is part of the Lemon Network Monitor.
+# Copyright (C) 2011, Tobias Koch <tobias@tobijk.de>
+#
+# Lemon is licensed under the GNU General Public License, version 2. A copy of
+# the license text can be found in the file LICENSE in the source distribution.
+#
+
+# make lemon relocatable
+INSTALL_DIR = File.expand_path(File.dirname(File.symlink?(__FILE__) ?
+  File.readlink(__FILE__) : __FILE__) + '/..')
+$LOAD_PATH.unshift INSTALL_DIR + '/lib'
+
+require 'lemon/version'
+require 'lemon/check'
+
+CHECKS_DIR = INSTALL_DIR + '/lib/lemon/check'
+
+LEMON_ERR_INVOCATION = 1
+LEMON_ERR_INTERRUPT  = 2
+LEMON_ERR_RUNTIME    = 3
+
+class LemonCLI
+
+  def initialize
+    load_plugins
+  end
+
+  def usage
+    puts "Lemon Network Monitor CLI, version #{LEMON_VERSION}                     \n"
+    puts "Copyright (C) 2011, Tobias Koch <tobias@tobijk.de>                      \n"
+    puts "                                                                        \n"
+    puts "USAGE: lemon <command> [OPTIONS] <...>                                  \n"
+    puts "                                                                        \n"
+    puts "AVAILABLE COMMANDS:                                                     \n"
+    puts "                                                                        \n"
+
+    @commands.each do |command|
+      puts " #{command}\n"
+    end
+
+    puts "                                                                        \n"
+    puts "Type 'lemon <command> --help' to get more information about a command.  \n"
+    puts "                                                                        \n"
+  end
+
+  def load_plugins
+    @commands = []
+
+    Dir.glob(CHECKS_DIR + '/*.rb').each do |plugin|
+      load plugin
+      @commands << File.basename(plugin).gsub(/\.rb$/, "")
+    end
+
+    @commands.sort
+  end
+
+  def execute
+    if ARGV.size < 1 or [ '-h', '--help' ].include? ARGV[0]
+      usage
+      exit 0
+    end
+
+    cmd = ARGV[0] ; ARGV.shift
+    raise StandardError, "unknown command '#{cmd}'"\
+      unless @commands.include? cmd
+
+    check_class = Kernel.const_get("Lemon#{cmd.capitalize}Check")
+    check = check_class.new
+    check.run_check
+  end
+
+end
+
+begin #main()
+  cli = LemonCLI.new
+
+  begin
+    exit cli.execute
+  rescue Interrupt
+    $stderr.write "lemon: caught interrupt, exiting\n"
+    exit LEMON_ERR_INTERRUPT
+  rescue SystemExit
+    raise
+  rescue Exception => e
+    $stderr.write "lemon: #{e.message}\n"
+    exit LEMON_ERR_RUNTIME
+  end
+
+end
