@@ -17,17 +17,18 @@ require 'getoptlong'
 class LemonHttpCheck < Lemon::Check
 
   def usage
-    "Lemon HTTP Check - Copyright (C) 2011 Tobias Koch <tobias@tobijk.de>            \n" +\
-    "                                                                                \n" +\
-    "USAGE: lemon http [OPTIONS] <url>                                               \n" +\
-    "                                                                                \n" +\
-    "OPTIONS:                                                                        \n" +\
-    "                                                                                \n" +\
-    "-e, --content-check=<regex>     verify that document contains regex, this       \n" +\
-    "                                option can be specified multiple times          \n" +\
-    "--connect-timeout=<integer>     number of seconds for connection timeout        \n" +\
-    "--request-timeout=<integer>     number of seconds for HTTP request timeout      \n" +\
-    "--allow-redirect                allow redirection, otherwise treated as error   \n" +\
+    "Lemon Network Monitor - HTTP Check                                              \n"\
+    "Copyright (C) 2011 Tobias Koch <tobias@tobijk.de>                               \n"\
+    "                                                                                \n"\
+    "USAGE: lemon http [OPTIONS] <url>                                               \n"\
+    "                                                                                \n"\
+    "OPTIONS:                                                                        \n"\
+    "                                                                                \n"\
+    "-e, --content-check=<regex>     verify that document contains regex, this       \n"\
+    "                                option can be specified multiple times          \n"\
+    "--connect-timeout=<integer>     number of seconds for connection timeout        \n"\
+    "--request-timeout=<integer>     number of seconds for HTTP request timeout      \n"\
+    "--allow-redirect                allow redirection, otherwise treated as error   \n"\
     "                                                                                \n"
   end
 
