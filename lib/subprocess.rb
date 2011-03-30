@@ -9,20 +9,12 @@
 
 require 'io/nonblock'
 
-class Subprocess
+module Subprocess
 
   class Error < StandardError
   end
 
   attr_reader :pid, :stdin, :stdeo
-
-  def initialize(stdin, stdeo, pid)
-    @stdin = stdin
-    @stdeo = stdeo
-    @pid = pid
-    @exit_code = nil
-    @finished = false
-  end
 
   def io_nonblock=(nb)
     @stdeo.nonblock = nb
@@ -62,9 +54,7 @@ class Subprocess
     Process.kill(signal, @pid)
   end
 
-  # popen class method(s)
-
-  def self.popen2(cmd, env = {})
+  def spawn(env = {})
     stdin_r, stdin_w = IO.pipe
     stdeo_r, stdeo_w = IO.pipe
 
@@ -73,7 +63,8 @@ class Subprocess
       stdin_r.close
       stdeo_w.close
 
-      return Subprocess.new(stdin_w, stdeo_r, pid)
+      @pid, @stdin, @stdeo, @finished = pid, stdin_w, stdeo_r, false
+      started # like a signal, implement to catch
     else
       stdin_w.close
       stdeo_r.close
@@ -83,16 +74,25 @@ class Subprocess
       $stderr.reopen(stdeo_w)
 
       update_env(env)
-      exec cmd
+      exit run
     end
   end
 
-  def self.update_env(env)
+  def update_env(env)
     ENV.delete_if do |key, value|
       not ['PATH', 'USER', 'USERNAME'].include?(key)
     end
     env.each_pair do |key, value|
       ENV[key] = value
+    end
+  end
+
+  def method_missing(m, *args, &block)
+    case m
+      when :started
+        #ignore
+      else
+        raise NoMethodError, "undefined method `#{m}' for #{self.class}"
     end
   end
 
