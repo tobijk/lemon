@@ -154,7 +154,7 @@ class LemonHttpCheck < Lemon::Check
     @config['content_check'].each do |regex|
       unless document =~ regex
         state = Lemon::Check::FAIL
-        msg   = "Content check #{regex.to_s} failed\n\n#{msg}"
+        msg   = "Content check /#{regex.source}/ failed\n\n#{msg}"
         break
       end
     end
