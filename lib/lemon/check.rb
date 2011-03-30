@@ -7,6 +7,8 @@
 # the license text can be found in the file LICENSE in the source distribution.
 #
 
+require 'lemon/error'
+
 module Lemon
 
   class Check
@@ -14,8 +16,9 @@ module Lemon
     PASS = 0
     WARN = 1
     FAIL = 2
+    WAIT = 3
 
-    class Error < StandardError
+    class Error < Lemon::Error
     end
 
     def timeout(seconds = nil, &block)
