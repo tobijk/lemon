@@ -34,6 +34,7 @@
         <check name="http" description="Slashdot front page">
             <param name="content_check" value="Slashdot Poll"/>
             <param name="content_check" value="Read.*the.*\d+.*comments"/>
+            <param name="content_check" value="THIS CHECK SHOULD FAIL"/>
             <param value="http://&host;"/>
         </check>
     </host>
