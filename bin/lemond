@@ -16,6 +16,7 @@ $LOAD_PATH.unshift INSTALL_DIR + '/lib'
 require 'lemon/version'
 require 'lemon/config'
 require 'lemon/error'
+require 'lemon/scheduler'
 require 'getoptlong'
 
 CHECKS_DIR = INSTALL_DIR + '/lib/lemon/check'
@@ -26,7 +27,10 @@ LEMON_ERR_INVOCATION = 1
 LEMON_ERR_INTERRUPT  = 2
 LEMON_ERR_RUNTIME    = 3
 
-$threads = []
+$subsystems = []
+
+Signal.trap("TERM") { $subsystems.each { |t| t.stop! } }
+Signal.trap("INT")  { $subsystems.each { |t| t.stop! } }
 
 def usage
   puts "Lemon Network Monitor, version #{LEMON_VERSION}                           \n"
@@ -106,18 +110,24 @@ begin #main()
   # COMMAND LINE OVERRIDES CONFIG FILE
   config.global_conf.merge opts
 
+  # DAEMONIZE
+  daemonize(config.global_conf['pid_file'])\
+    if config.global_conf['daemonize']
+
   # TODO: initialize logging
+
+  threads = []
 
   # RUN SCHEDULER
   tasks = config.hosts.collect { |h| h.tasks }.flatten
   scheduler = Lemon::Scheduler.new(config.global_conf, tasks)
-  scheduler.run
-  $threads << scheduler
+  threads << scheduler.run
+  $subsystems << scheduler
 
   # TODO: add web GUI
 
   # WAIT UNTIL THREADS ARE DONE
-  $threads.each { |th| th.join }
+  threads.each { |th| th.join }
 
 rescue Exception => e
   $stderr.write "lemond: #{e.message}\n"
