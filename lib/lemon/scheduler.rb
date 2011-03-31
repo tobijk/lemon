@@ -43,8 +43,6 @@ module Lemon
       }
 
       while !@stop
-        current_time = Time.now
-
         active_tasks.each do |t|
           t.update
           if t.finished?
