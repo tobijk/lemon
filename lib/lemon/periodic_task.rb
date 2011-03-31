@@ -22,7 +22,7 @@ module Lemon
       @next_update = Time.now
       @last_update = nil
       @result = Lemon::Check::WAIT
-      @update_interval = config['update_interval']
+      @update_interval = config['update_interval'].to_i
 
       begin
         @check = Kernel.const_get("Lemon#{config['name'].capitalize}Check").new
