@@ -25,9 +25,9 @@ module Lemon
       @update_interval = config['update_interval']
 
       begin
-        @check = Kernel.const_get("Lemon#{config['command'].capitalize}Check").new
+        @check = Kernel.const_get("Lemon#{config['name'].capitalize}Check").new
       rescue NameError
-        raise Lemon::Error, "failed to load command module '#{config['command']}'"
+        raise Lemon::Error, "failed to load command module '#{config['name']}'"
       end
 
       @params = config['params']
