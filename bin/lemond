@@ -1,0 +1,127 @@
+#!/usr/bin/env ruby
+#-*- encoding: utf-8 -*-
+#
+# This file is part of the Lemon Network Monitor.
+# Copyright (C) 2011, Tobias Koch <tobias@tobijk.de>
+#
+# Lemon is licensed under the GNU General Public License, version 2. A copy of
+# the license text can be found in the file LICENSE in the source distribution.
+#
+
+# make lemond relocatable
+INSTALL_DIR = File.expand_path(File.dirname(File.symlink?(__FILE__) ?
+  File.readlink(__FILE__) : __FILE__) + '/..')
+$LOAD_PATH.unshift INSTALL_DIR + '/lib'
+
+require 'lemon/version'
+require 'lemon/config'
+require 'lemon/error'
+require 'getoptlong'
+
+CHECKS_DIR = INSTALL_DIR + '/lib/lemon/check'
+SYSTEM_CONFIG = '/etc/lemon.xml'
+EXAMPLE_CONFIG = INSTALL_DIR + '/etc/lemon.xml'
+
+LEMON_ERR_INVOCATION = 1
+LEMON_ERR_INTERRUPT  = 2
+LEMON_ERR_RUNTIME    = 3
+
+$threads = []
+
+def usage
+  puts "Lemon Network Monitor, version #{LEMON_VERSION}                           \n"
+  puts "Copyright (C) 2011, Tobias Koch <tobias@tobijk.de>                        \n"
+  puts "                                                                          \n"
+  puts "USAGE: lemond [OPTIONS]                                                   \n"
+  puts "                                                                          \n"
+  puts "OPTIONS:                                                                  \n"
+  puts "                                                                          \n"
+  puts "--help, -h         print this help message                                \n"
+  puts "--daemonize        fork into background                                   \n"
+  puts "--pid-file=<file>  write pidfile when run as daemon                       \n"
+  puts "                                                                          \n"
+end
+
+def load_plugins
+  Dir.glob(CHECKS_DIR + '/*.rb').each do |plugin|
+    load plugin
+  end
+end
+
+def daemonize(pid_file)
+
+end
+
+def parse_command_line
+  config = {
+    'daemonize' => false,
+    'update_interval' => 300
+  }
+
+  opts = GetoptLong.new(
+    [ '--help', '-h', GetoptLong::NO_ARGUMENT ],
+    [ '--daemonize',  GetoptLong::NO_ARGUMENT ],
+    [ '--pid-file',   GetoptLong::REQUIRED_ARGUMENT ]
+  )
+
+  opts.quiet = true
+  begin
+    opts.each do |opt, arg|
+      case opt
+        when '--help'
+          usage
+          exit 0
+        when '--daemonize'
+          @config['daemonize'] = true
+        when '--pid-file'
+          @config['pid_file'] = arg
+      end
+    end
+  rescue GetoptLong::Error => e
+    raise Lemon::Error, e.message
+  end
+
+  return config
+end
+
+begin #main()
+
+  # PARSE COMMAND LINE
+  opts = parse_command_line
+
+  # LOAD CHECKS
+  load_plugins
+
+  # READ CONFIGURATION FILE
+  config =\
+    if File.exist? SYSTEM_CONFIG
+      Lemon::Config.new(SYSTEM_CONFIG)
+    elsif File.exist? EXAMPLE_CONFIG
+      Lemon::Config.new EXAMPLE_CONFIG
+    else
+      $stderr.write "no configuration file found\n"
+      exit LEMON_ERR_INVOCATION
+    end
+
+  # COMMAND LINE OVERRIDES CONFIG FILE
+  config.global_conf.merge opts
+
+  # TODO: initialize logging
+
+  # RUN SCHEDULER
+  tasks = config.hosts.collect { |h| h.tasks }.flatten
+  scheduler = Lemon::Scheduler.new(config.global_conf, tasks)
+  scheduler.run
+  $threads << scheduler
+
+  # TODO: add web GUI
+
+  # WAIT UNTIL THREADS ARE DONE
+  $threads.each { |th| th.join }
+
+rescue Exception => e
+  $stderr.write "lemond: #{e.message}\n"
+  exit LEMON_ERR_RUNTIME
+
+end
+
