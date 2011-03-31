@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<lemon update_interval="300">
+<lemon update_interval="10">
 
-    <host name="www.f-secure.com" update_interval="30">
+    <host name="www.f-secure.com" update_interval="20">
 
         <check name="http" description="F-Secure home page">
             <param name="content_check" value="Tietoturva"/>
@@ -10,7 +10,7 @@
         </check>
 
         <check name="http" description="Internet Security 2011 page"
-                update_interval="60">
+                update_interval="15">
             <param name="content_check" value="Internet Security \d{4}"/>
             <param value="http://&host;/fi/web/home_fi/protection/internet-security/overview"/>
         </check>
