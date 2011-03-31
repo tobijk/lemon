@@ -29,6 +29,7 @@ module Subprocess
     else
       proc_stat = $?
       @exit_code = proc_stat.exitstatus if proc_stat.exited?
+      stopped # like a signal, implement to catch
       @finished = true
     end
   end
@@ -39,6 +40,7 @@ module Subprocess
     @finished = true
     proc_stat = $?
     @exit_code = proc_stat.exitstatus if proc_stat.exited?
+    stopped # like a signal, implement to catch
     return @exit_code
   end
 
@@ -90,6 +92,8 @@ module Subprocess
   def method_missing(m, *args, &block)
     case m
       when :started
+        #ignore
+      when :stopped
         #ignore
       else
         raise NoMethodError, "undefined method `#{m}' for #{self.class}"
