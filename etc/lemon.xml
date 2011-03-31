@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lemon update_interval="300">
+
+    <host name="www.f-secure.com" update_interval="30">
+
+        <check name="http" description="F-Secure home page">
+            <param name="content_check" value="Tietoturva"/>
+            <param name="content_check" value="Internet Security"/>
+            <param value="http://&host;/fi/web/home_fi/home"/>
+        </check>
+
+        <check name="http" description="Internet Security 2011 page"
+                update_interval="60">
+            <param name="content_check" value="Internet Security \d{4}"/>
+            <param value="http://&host;/fi/web/home_fi/protection/internet-security/overview"/>
+        </check>
+
+    </host>
+
+    <host name="www.google.fi">
+        <check name="http" description="Google.fi search page">
+            <param name="content_check" value="haku"/>
+            <param value="http://&host;"/>
+        </check>
+    </host>
+
+    <host name="slashdot.org">
+        <check name="http" description="Slashdot front page">
+            <param name="content_check" value="Slashdot Poll"/>
+            <param name="content_check" value="Read the \d+ comments"/>
+            <param value="http://&host;"/>
+        </check>
+    </host>
+
+</lemon>
