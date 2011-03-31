@@ -80,6 +80,8 @@ module Lemon
 
         @hosts << host
       end
+
+      @hosts.sort! { |a, b| a.name <=> b.name }
     end
 
   end
