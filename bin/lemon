@@ -54,7 +54,7 @@ class LemonCLI
       @commands << File.basename(plugin).gsub(/\.rb$/, "")
     end
 
-    @commands.sort
+    @commands.sort!
   end
 
   def execute
