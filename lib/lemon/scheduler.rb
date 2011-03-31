@@ -37,9 +37,9 @@ module Lemon
     #
     def work
       status_to_string = {
-        Lemon::Check::PASS => "SUCCESS",
-        Lemon::Check::WARN => "WARNING",
-        Lemon::Check::FAIL => "FAILED"
+        Lemon::Check::PASS => "[  OK  ]",
+        Lemon::Check::WARN => "[ WARN ]",
+        Lemon::Check::FAIL => "[ FAIL ]"
       }
 
       while !@stop
@@ -48,7 +48,7 @@ module Lemon
         active_tasks.each do |t|
           t.update
           if t.finished?
-            $stdout.write("#{status_to_string[t.exit_code]}: #{t.class} - #{t.message.split(/\n/)[0]}\n")
+            $stdout.write("#{status_to_string[t.exit_code]}: #{t.description} - #{t.message.split(/\n/)[0]}\n")
           end
         end
 

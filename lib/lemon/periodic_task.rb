@@ -16,13 +16,14 @@ module Lemon
   class PeriodicTask
     include Subprocess
 
-    attr_reader :next_update, :last_update, :result, :message
+    attr_reader :next_update, :last_update, :result, :message, :description
 
     def initialize(config = {})
       @next_update = Time.now
       @last_update = nil
       @result = Lemon::Check::WAIT
       @update_interval = config['update_interval'].to_i
+      @description = config['description'] || ""
 
       begin
         @check = Kernel.const_get("Lemon#{config['name'].capitalize}Check").new
