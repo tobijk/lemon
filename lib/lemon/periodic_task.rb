@@ -32,11 +32,21 @@ module Lemon
 
       @params = config['params']
       @buffer = ""
+      @active = false
+    end
+
+    def active?
+      @active
     end
 
     def started
       io_nonblock = true
       @buffer = ""
+      @active = true
+    end
+
+    def stopped
+      @active = false
     end
 
     def run
