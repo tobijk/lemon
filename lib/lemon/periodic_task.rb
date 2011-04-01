@@ -41,7 +41,7 @@ module Lemon
     end
 
     def started
-      io_nonblock = true
+      self.io_nonblock = true
       @buffer = ""
       @active = true
     end
@@ -89,7 +89,10 @@ module Lemon
     end
 
     def update
-      @buffer << @stdeo.read unless @stdeo.eof?
+      begin
+        @buffer << @stdeo.read_nonblock(1024)
+      rescue Errno::EAGAIN ; end
+
       if finished?
         @message = @buffer
         @result = exit_code
