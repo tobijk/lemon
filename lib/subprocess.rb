@@ -16,31 +16,27 @@ module Subprocess
 
   attr_reader :pid, :stdin, :stdeo
 
-  def io_nonblock=(nb)
-    @stdeo.nonblock = nb
-    @stdin.nonblock = nb
-  end
-
   def finished?
     return true if @finished
+
     pid = Process.waitpid(@pid, Process::WNOHANG)
-    if pid.nil?
-      false
-    else
-      proc_stat = $?
-      @exit_code = proc_stat.exitstatus if proc_stat.exited?
-      stopped # like a signal, implement to catch
-      @finished = true
-    end
+    return false if pid.nil?
+
+    @exit_code = $?.exitstatus if $?.exited?
+    @finished = true
+
+    stopped() # signal
+    return true
   end
 
   def wait
     return @exit_code if @finished
+
     Process.waitpid(@pid, 0)
+    @exit_code = $?.exitstatus if $?.exited?
     @finished = true
-    proc_stat = $?
-    @exit_code = proc_stat.exitstatus if proc_stat.exited?
-    stopped # like a signal, implement to catch
+
+    stopped() # signal
     return @exit_code
   end
 
@@ -66,7 +62,7 @@ module Subprocess
       stdeo_w.close
 
       @pid, @stdin, @stdeo, @finished = pid, stdin_w, stdeo_r, false
-      started # like a signal, implement to catch
+      started() # signal
     else
       stdin_w.close
       stdeo_r.close
@@ -76,7 +72,7 @@ module Subprocess
       $stderr.reopen(stdeo_w)
 
       update_env(env)
-      exit run
+      exit run()
     end
   end
 
