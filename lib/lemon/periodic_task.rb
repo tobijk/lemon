@@ -32,6 +32,7 @@ module Lemon
       end
 
       @params = config['params']
+
       @buffer = ""
       @active = false
     end
@@ -41,7 +42,6 @@ module Lemon
     end
 
     def started
-      self.io_nonblock = true
       @buffer = ""
       @active = true
     end
@@ -85,19 +85,22 @@ module Lemon
       end
 
       # run the check
-      @check.run_check
+      @check.run_check()
     end
 
     def update
       begin
-        @buffer << @stdeo.read_nonblock(1024)
-      rescue Errno::EAGAIN ; end
-
-      if finished?
-        @message = @buffer
-        @result = exit_code
+        while true
+          buf = @stdeo.read_nonblock(1024)
+          @buffer << buf if !buf.empty? or break
+        end
+      rescue EOFError
+        @message, @buffer = @buffer, ""
+        @result = exit_code()
         @last_update = Time.now
         @next_update = @last_update + @update_interval
+      rescue Exception
+        # ignore
       end
     end
 
