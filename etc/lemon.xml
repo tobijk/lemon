@@ -39,4 +39,10 @@
         </check>
     </host>
 
+    <host name="google.de">
+        <check name="http" description="Port closed, blocked request">
+            <param value="http://&host;:12345"/>
+        </check>
+    </host>
+
 </lemon>
