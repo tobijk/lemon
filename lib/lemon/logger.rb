@@ -48,7 +48,7 @@ module Lemon
     end
 
     def self.write(msg)
-      raise Lemon::Error, "logging uninitialized" unless @@instance
+      self.instance(stderr) unless @@instance
       @@instance.write("#{Time.now} - #{msg}\n")
     end
 
