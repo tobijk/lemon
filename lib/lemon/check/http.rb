@@ -159,7 +159,7 @@ class LemonHttpCheck < Lemon::Check
       end
     end
 
-    puts msg
+    $stdout.write(msg)
     return state
   end
 

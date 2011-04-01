@@ -47,7 +47,9 @@ module Lemon
         active_tasks.each do |t|
           t.update
           if t.finished?
-            Lemon::Logger.write("#{status_to_string[t.exit_code]} #{t.description} - #{t.message.split(/\n/)[0]}")
+            msg = "#{status_to_string[t.exit_code]} #{t.description} - "\
+                  "#{t.message.split(/(?:\r|\n)+/)[0]}"
+            Lemon::Logger.write(msg)
           end
         end
 
