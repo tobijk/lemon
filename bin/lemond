@@ -17,6 +17,7 @@ require 'lemon/version'
 require 'lemon/config'
 require 'lemon/error'
 require 'lemon/scheduler'
+require 'lemon/logger'
 require 'getoptlong'
 
 CHECKS_DIR = INSTALL_DIR + '/lib/lemon/check'
@@ -43,6 +44,7 @@ def usage
   puts "--help, -h         print this help message                                \n"
   puts "--daemonize        fork into background                                   \n"
   puts "--pid-file=<file>  write pidfile when run as daemon                       \n"
+  puts "--log-file=<file>  override log file location                             \n"
   puts "                                                                          \n"
 end
 
@@ -52,20 +54,35 @@ def load_plugins
   end
 end
 
-def daemonize(pid_file)
+def daemonize(pid_file = nil)
+  if pid = fork
+    File.open(pid_file, "w") do |f|
+      f.write "#{pid}"
+    end if pid_file
 
+    $stdin.close
+    $stdout.close
+    $stderr.close
+    exit! 0
+  end
+
+  # reset pgid to pid
+  Process.setpgrp 
 end
 
 def parse_command_line
   config = {
     'daemonize' => false,
-    'update_interval' => 300
+    'update_interval' => 300,
+    'log_file' => INSTALL_DIR + '/log/lemond.log',
+    'pid_file' => INSTALL_DIR + '/run/lemond.pid'
   }
 
   opts = GetoptLong.new(
     [ '--help', '-h', GetoptLong::NO_ARGUMENT ],
     [ '--daemonize',  GetoptLong::NO_ARGUMENT ],
-    [ '--pid-file',   GetoptLong::REQUIRED_ARGUMENT ]
+    [ '--pid-file',   GetoptLong::REQUIRED_ARGUMENT ],
+    [ '--log-file',   GetoptLong::REQUIRED_ARGUMENT ]
   )
 
   opts.quiet = true
@@ -76,9 +93,11 @@ def parse_command_line
           usage
           exit 0
         when '--daemonize'
-          @config['daemonize'] = true
+          config['daemonize'] = true
         when '--pid-file'
-          @config['pid_file'] = arg
+          config['pid_file'] = arg
+        when '--log-file'
+          config['log_file'] = arg
       end
     end
   rescue GetoptLong::Error => e
@@ -108,13 +127,14 @@ begin #main()
     end
 
   # COMMAND LINE OVERRIDES CONFIG FILE
-  config.global_conf.merge opts
+  config.global_conf.merge! opts
+
+  # START LOGGING
+  Lemon::Logger.instance(config.global_conf['log_file'])
 
   # DAEMONIZE
   daemonize(config.global_conf['pid_file'])\
     if config.global_conf['daemonize']
-
-  # TODO: initialize logging
 
   threads = []
 
@@ -129,7 +149,11 @@ begin #main()
   # WAIT UNTIL THREADS ARE DONE
   threads.each { |th| th.join }
 
+  # STOP LOGGIN
+  Lemon::Logger.close
+
 rescue Exception => e
+  raise
   $stderr.write "lemond: #{e.message}\n"
   exit LEMON_ERR_RUNTIME
 
