@@ -9,6 +9,7 @@
 
 require 'lemon/periodic_task'
 require 'lemon/check'
+require 'lemon/logger'
 
 module Lemon
 
@@ -46,7 +47,7 @@ module Lemon
         active_tasks.each do |t|
           t.update
           if t.finished?
-            $stdout.write("#{status_to_string[t.exit_code]}: #{t.description} - #{t.message.split(/\n/)[0]}\n")
+            Lemon::Logger.write("#{status_to_string[t.exit_code]} #{t.description} - #{t.message.split(/\n/)[0]}")
           end
         end
 
