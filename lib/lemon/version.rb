@@ -7,4 +7,4 @@
 # the license text can be found in the file LICENSE in the source distribution.
 #
 
-LEMON_VERSION="0.1.0"
+LEMON_VERSION="0.1.1"
