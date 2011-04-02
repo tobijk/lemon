@@ -20,8 +20,9 @@ begin #main()
 
   daemon = Lemon::Daemon.new
 
-  Signal.trap("TERM") { daemon.stop! }
-  Signal.trap("INT")  { daemon.stop! }
+  [ "TERM", "INT" ].each {
+    |signal| Signal.trap(signal) { daemon.stop! }
+  }
 
   daemon.execute
 
