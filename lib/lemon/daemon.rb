@@ -46,9 +46,7 @@ module Lemon
       end
     end
 
-    def daemonize
-      pid_file = @config['pid_file']
-
+    def daemonize(pid_file = nil)
       if pid = fork
         File.open(pid_file, "w") { |f| f.write "#{pid}" } if pid_file
         [ $stdin, $stdout, $stderr ].each { |io| io.close }
