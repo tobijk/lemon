@@ -9,88 +9,24 @@
 #
 
 # make lemon relocatable
-INSTALL_DIR = File.expand_path(File.dirname(File.symlink?(__FILE__) ?
+LEMON_INSTALL_DIR = File.expand_path(File.dirname(File.symlink?(__FILE__) ?
   File.readlink(__FILE__) : __FILE__) + '/..')
-$LOAD_PATH.unshift INSTALL_DIR + '/lib'
+$LOAD_PATH.unshift LEMON_INSTALL_DIR + '/lib'
 
-require 'lemon/version'
-require 'lemon/check'
 require 'lemon/error'
-
-CHECKS_DIR = INSTALL_DIR + '/lib/lemon/check'
-
-LEMON_ERR_INVOCATION = 1
-LEMON_ERR_INTERRUPT  = 2
-LEMON_ERR_RUNTIME    = 3
-
-class LemonCLI
-
-  def initialize
-    load_command_list
-  end
-
-  def usage
-    puts "Lemon Network Monitor CLI, version #{LEMON_VERSION}                     \n"
-    puts "Copyright (C) 2011, Tobias Koch <tobias@tobijk.de>                      \n"
-    puts "                                                                        \n"
-    puts "USAGE: lemon <command> [OPTIONS] <...>                                  \n"
-    puts "                                                                        \n"
-    puts "AVAILABLE COMMANDS:                                                     \n"
-    puts "                                                                        \n"
-
-    @commands.each do |command|
-      puts " #{command}\n"
-    end
-
-    puts "                                                                        \n"
-    puts "Type 'lemon <command> --help' to get more information about a command.  \n"
-    puts "                                                                        \n"
-  end
-
-  def load_plugin(plugin_name)
-    raise StandardError, "unknown command '#{plugin_name}'"\
-      unless @commands.include? plugin_name
-
-    load CHECKS_DIR + "/#{plugin_name}.rb"
-  end
-
-  def load_command_list
-    @commands = []
-
-    Dir.glob(CHECKS_DIR + '/*.rb').each do |plugin|
-      @commands << File.basename(plugin).gsub(/\.rb$/, "")
-    end
-
-    @commands.sort!
-  end
-
-  def execute
-    if ARGV.size < 1 or [ '-h', '--help' ].include? ARGV[0]
-      usage
-      exit 0
-    end
-
-    # load plugin
-    cmd = ARGV[0] ; ARGV.shift
-    load_plugin(cmd)
-
-    check_class = Kernel.const_get("Lemon#{cmd.capitalize}Check")
-    check = check_class.new
-    check.run_check
-  end
-
-end
+require 'lemon/cli'
 
 begin #main()
 
-  cli = LemonCLI.new
+  cli = Lemon::CLI.new
   exit cli.execute
 
 rescue Interrupt
   $stderr.write "lemon: caught interrupt, exiting\n"
-  exit LEMON_ERR_INTERRUPT
+  exit Lemon::ERR_INTERRUPT
+
 rescue Lemon::Error => e
   $stderr.write "lemon: #{e.message}\n"
-  exit LEMON_ERR_RUNTIME
-end
+  exit Lemon::ERR_RUNTIME
 
+end

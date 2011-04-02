@@ -9,153 +9,25 @@
 #
 
 # make lemond relocatable
-INSTALL_DIR = File.expand_path(File.dirname(File.symlink?(__FILE__) ?
+LEMON_INSTALL_DIR = File.expand_path(File.dirname(File.symlink?(__FILE__) ?
   File.readlink(__FILE__) : __FILE__) + '/..')
-$LOAD_PATH.unshift INSTALL_DIR + '/lib'
+$LOAD_PATH.unshift LEMON_INSTALL_DIR + '/lib'
 
-require 'lemon/version'
-require 'lemon/config'
 require 'lemon/error'
-require 'lemon/scheduler'
-require 'lemon/logger'
-require 'getoptlong'
-
-CHECKS_DIR = INSTALL_DIR + '/lib/lemon/check'
-SYSTEM_CONFIG = '/etc/lemon.xml'
-EXAMPLE_CONFIG = INSTALL_DIR + '/etc/lemon.xml'
-
-LEMON_ERR_INVOCATION = 1
-LEMON_ERR_INTERRUPT  = 2
-LEMON_ERR_RUNTIME    = 3
-
-$subsystems = []
-
-Signal.trap("TERM") { $subsystems.each { |t| t.stop! } }
-Signal.trap("INT")  { $subsystems.each { |t| t.stop! } }
-
-def usage
-  puts "Lemon Network Monitor, version #{LEMON_VERSION}                           \n"
-  puts "Copyright (C) 2011, Tobias Koch <tobias@tobijk.de>                        \n"
-  puts "                                                                          \n"
-  puts "USAGE: lemond [OPTIONS]                                                   \n"
-  puts "                                                                          \n"
-  puts "OPTIONS:                                                                  \n"
-  puts "                                                                          \n"
-  puts "--help, -h         print this help message                                \n"
-  puts "--daemonize        fork into background                                   \n"
-  puts "--pid-file=<file>  write pidfile when run as daemon                       \n"
-  puts "--log-file=<file>  override log file location                             \n"
-  puts "                                                                          \n"
-end
-
-def load_plugins
-  Dir.glob(CHECKS_DIR + '/*.rb').each do |plugin|
-    load plugin
-  end
-end
-
-def daemonize(pid_file = nil)
-  if pid = fork
-    File.open(pid_file, "w") do |f|
-      f.write "#{pid}"
-    end if pid_file
-
-    $stdin.close
-    $stdout.close
-    $stderr.close
-    exit! 0
-  end
-
-  # reset pgid to pid
-  Process.setpgrp 
-end
-
-def parse_command_line
-  config = {
-    'daemonize' => false,
-    'update_interval' => 300,
-    'log_file' => INSTALL_DIR + '/log/lemond.log',
-    'pid_file' => INSTALL_DIR + '/run/lemond.pid'
-  }
-
-  opts = GetoptLong.new(
-    [ '--help', '-h', GetoptLong::NO_ARGUMENT ],
-    [ '--daemonize',  GetoptLong::NO_ARGUMENT ],
-    [ '--pid-file',   GetoptLong::REQUIRED_ARGUMENT ],
-    [ '--log-file',   GetoptLong::REQUIRED_ARGUMENT ]
-  )
-
-  opts.quiet = true
-  begin
-    opts.each do |opt, arg|
-      case opt
-        when '--help'
-          usage
-          exit 0
-        when '--daemonize'
-          config['daemonize'] = true
-        when '--pid-file'
-          config['pid_file'] = arg
-        when '--log-file'
-          config['log_file'] = arg
-      end
-    end
-  rescue GetoptLong::Error => e
-    raise Lemon::Error, e.message
-  end
-
-  return config
-end
+require 'lemon/daemon'
 
 begin #main()
 
-  # PARSE COMMAND LINE
-  opts = parse_command_line
+  daemon = Lemon::Daemon.new
 
-  # LOAD CHECKS
-  load_plugins
+  Signal.trap("TERM") { daemon.stop! }
+  Signal.trap("INT")  { daemon.stop! }
 
-  # READ CONFIGURATION FILE
-  config =\
-    if File.exist? SYSTEM_CONFIG
-      Lemon::Config.new(SYSTEM_CONFIG)
-    elsif File.exist? EXAMPLE_CONFIG
-      Lemon::Config.new EXAMPLE_CONFIG
-    else
-      $stderr.write "no configuration file found\n"
-      exit LEMON_ERR_INVOCATION
-    end
+  daemon.execute
 
-  # COMMAND LINE OVERRIDES CONFIG FILE
-  config.global_conf.merge! opts
-
-  # START LOGGING
-  Lemon::Logger.instance(config.global_conf['log_file'])
-
-  # DAEMONIZE
-  daemonize(config.global_conf['pid_file'])\
-    if config.global_conf['daemonize']
-
-  threads = []
-
-  # RUN SCHEDULER
-  tasks = config.hosts.collect { |h| h.tasks }.flatten
-  scheduler = Lemon::Scheduler.new(config.global_conf, tasks)
-  threads << scheduler.run
-  $subsystems << scheduler
-
-  # TODO: add web GUI
-
-  # WAIT UNTIL THREADS ARE DONE
-  threads.each { |th| th.join }
-
-  # STOP LOGGIN
-  Lemon::Logger.close
-
-rescue Exception => e
-  raise
+rescue Lemon::Error => e
   $stderr.write "lemond: #{e.message}\n"
-  exit LEMON_ERR_RUNTIME
+  exit Lemon::ERR_RUNTIME
 
 end
 

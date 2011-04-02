@@ -9,6 +9,10 @@
 
 module Lemon
 
+  ERR_INVOCATION = 1
+  ERR_INTERRUPT  = 2
+  ERR_RUNTIME    = 3
+
   class Error < StandardError
   end
 

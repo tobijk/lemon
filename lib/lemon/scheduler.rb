@@ -19,6 +19,7 @@ module Lemon
       @config = globals
       @tasks = tasks
       @stop = false
+      @thread = nil
     end
 
     def run
@@ -26,7 +27,11 @@ module Lemon
         work
       end
 
-      return th
+      @thread = th
+    end
+
+    def join
+      @thread.join if @thread
     end
 
     # This needs to be rewritten:
