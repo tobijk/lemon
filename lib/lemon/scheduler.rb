@@ -23,11 +23,9 @@ module Lemon
     end
 
     def run
-      th = Thread.new do
+      @thread = Thread.new do
         work
       end
-
-      @thread = th
     end
 
     def join
