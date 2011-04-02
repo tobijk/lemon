@@ -15,6 +15,7 @@ $LOAD_PATH.unshift INSTALL_DIR + '/lib'
 
 require 'lemon/version'
 require 'lemon/check'
+require 'lemon/error'
 
 CHECKS_DIR = INSTALL_DIR + '/lib/lemon/check'
 
@@ -85,13 +86,10 @@ begin #main()
   cli = LemonCLI.new
   exit cli.execute
 
-rescue SystemExit
-  # circumvent catch all clause below
-  raise
 rescue Interrupt
   $stderr.write "lemon: caught interrupt, exiting\n"
   exit LEMON_ERR_INTERRUPT
-rescue Exception => e
+rescue Lemon::Error => e
   $stderr.write "lemon: #{e.message}\n"
   exit LEMON_ERR_RUNTIME
 end
