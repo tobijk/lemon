@@ -96,7 +96,7 @@ module Lemon
         end
       rescue EOFError
         @message, @buffer = @buffer, ""
-        @result = exit_code()
+        @result = wait()
         @last_update = Time.now
         @next_update = @last_update + @update_interval
       rescue Exception
