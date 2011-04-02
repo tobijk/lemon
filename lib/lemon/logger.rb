@@ -18,7 +18,11 @@ module Lemon
     def initialize(io_or_string = nil)
       @io = case io_or_string
         when String
-          io_or_string == '-' ? $stderr : File.open(io_or_string, 'a+')
+          begin
+            io_or_string == '-' ? $stderr : File.open(io_or_string, 'a+')
+          rescue Exception => e
+            raise Lemon::Error, e.message
+          end
         when IO
           io_or_string
         when nil
