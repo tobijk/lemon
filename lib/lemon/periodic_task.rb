@@ -26,9 +26,9 @@ module Lemon
       @description = config['description'] || ""
 
       begin
-        @check = Kernel.const_get("Lemon#{config['name'].capitalize}Check").new
+        @check = Lemon.const_get("#{config['name'].capitalize}Check").new
       rescue NameError
-        raise Lemon::Error, "failed to load command module '#{config['name']}'"
+        raise Lemon::Error, "failed to load check '#{config['name']}'"
       end
 
       @params = config['params']

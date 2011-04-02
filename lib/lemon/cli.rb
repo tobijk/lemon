@@ -70,7 +70,7 @@ module Lemon
       cmd = ARGV.shift
       load_plugin(cmd)
 
-      check_class = Kernel.const_get("Lemon#{cmd.capitalize}Check")
+      check_class = Lemon.const_get("#{cmd.capitalize}Check")
       check = check_class.new
       check.run_check
     end
