@@ -60,8 +60,6 @@ instead of using select to wait for events on the local pipe ends of the tasks.
 The http check doesn't care about document encoding. So content checks on exotic
 UTF-8 incompatible encodings may not do what the user expected.
 
-The CLI loads all plugins instead of only the one that is going to be executed.
-
 No validation or consistency check is performed while loading the configuration.
 
 The source code is mostly undocumented.

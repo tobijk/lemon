@@ -25,7 +25,7 @@ LEMON_ERR_RUNTIME    = 3
 class LemonCLI
 
   def initialize
-    load_plugins
+    load_command_list
   end
 
   def usage
@@ -46,11 +46,17 @@ class LemonCLI
     puts "                                                                        \n"
   end
 
-  def load_plugins
+  def load_plugin(plugin_name)
+    raise StandardError, "unknown command '#{plugin_name}'"\
+      unless @commands.include? plugin_name
+
+    load CHECKS_DIR + "/#{plugin_name}.rb"
+  end
+
+  def load_command_list
     @commands = []
 
     Dir.glob(CHECKS_DIR + '/*.rb').each do |plugin|
-      load plugin
       @commands << File.basename(plugin).gsub(/\.rb$/, "")
     end
 
@@ -63,9 +69,9 @@ class LemonCLI
       exit 0
     end
 
+    # load plugin
     cmd = ARGV[0] ; ARGV.shift
-    raise StandardError, "unknown command '#{cmd}'"\
-      unless @commands.include? cmd
+    load_plugin(cmd)
 
     check_class = Kernel.const_get("Lemon#{cmd.capitalize}Check")
     check = check_class.new
@@ -75,18 +81,18 @@ class LemonCLI
 end
 
 begin #main()
+
   cli = LemonCLI.new
+  exit cli.execute
 
-  begin
-    exit cli.execute
-  rescue Interrupt
-    $stderr.write "lemon: caught interrupt, exiting\n"
-    exit LEMON_ERR_INTERRUPT
-  rescue SystemExit
-    raise
-  rescue Exception => e
-    $stderr.write "lemon: #{e.message}\n"
-    exit LEMON_ERR_RUNTIME
-  end
-
+rescue SystemExit
+  # circumvent catch all clause below
+  raise
+rescue Interrupt
+  $stderr.write "lemon: caught interrupt, exiting\n"
+  exit LEMON_ERR_INTERRUPT
+rescue Exception => e
+  $stderr.write "lemon: #{e.message}\n"
+  exit LEMON_ERR_RUNTIME
 end
+
