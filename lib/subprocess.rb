@@ -7,8 +7,6 @@
 # the license text can be found in the file LICENSE in the source distribution.
 #
 
-require 'io/nonblock'
-
 module Subprocess
 
   class Error < StandardError
