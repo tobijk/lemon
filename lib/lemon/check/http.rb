@@ -136,7 +136,11 @@ module Lemon
       # handle redirection and errors
       if Net::HTTPRedirection === response && @config['allow_redirect']
         url_f = URI.parse(response['location'])
-        url = url_f.host.nil? ? URI.parse(url.scheme + '://' + url.host + '/' + url_f.path) : url_f
+        if url_f.host.nil?
+          url.path = url_f.path
+        else
+          url = url_f
+        end
         connect_time, request_time, response_body = fetch(url, redirect_depth + 1)
       else
         unless Net::HTTPSuccess === response
