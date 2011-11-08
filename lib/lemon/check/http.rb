@@ -108,25 +108,27 @@ module Lemon
       http.open_timeout = @config['connect_timeout'] if @config['connect_timeout']
       http.read_timeout = @config['request_timeout'] if @config['request_timeout']
 
-      # establish connection
-      begin
-        connect_time = time_execution { http.start }
-      rescue Timeout::Error
-        msg = "Timeout occurred while opening connection"
-        raise Lemon::Check::Error, msg
-      ensure
-        begin http.finish() rescue IOError ; end
-      end
-
       response = nil
 
-      # do HTTP request
       begin
-        path = url.path.empty? ? '/' : url.path
-        request_time = time_execution { response = http.get(path) }
-      rescue Timeout::Error
-        msg = "Timeout occurred while reading response"
-        raise Lemon::Check::Error, msg
+
+        # establish connection
+        begin
+          connect_time = time_execution { http.start }
+        rescue Timeout::Error
+          msg = "Timeout occurred while opening connection"
+          raise Lemon::Check::Error, msg
+        end
+
+        # do HTTP request
+        begin
+          path = url.path.empty? ? '/' : url.path
+          request_time = time_execution { response = http.get(path) }
+        rescue Timeout::Error
+          msg = "Timeout occurred while reading response"
+          raise Lemon::Check::Error, msg
+        end
+
       ensure
         begin http.finish() rescue IOError ; end
       end
